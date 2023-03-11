@@ -1,0 +1,88 @@
+---
+title: "parsing multiple XML records"
+output: html_notebook
+---
+
+```{r}
+library(XML)
+library(tidyverse)
+```
+
+```{r}
+xml2 <- xmlParse("./biosample_result-4.xml")
+xmltop2 = xmlRoot(xml2)
+NumRecords = xmlSize(xmltop2)
+```
+
+How many antibiogram records for each sample?
+Vector of row lengths for each sample
+```{r}
+# rows_per_record <- sapply(1:1000, function(x) xpathSApply(xmltop2,paste0('//*[',x,']/Description/Comment/Table/Body/Row/Cell'),xmlValue))
+# # check that number of records = number of tables
+# assertthat::assert_that(NumRecords == length(rows_per_record))
+# 
+# headers_per_record <- sapply(1:1000, function(x) xpathSApply(xmltop2, paste0('//*[',x,']/Description/Comment/Table/Header/Cell'), xmlValue))
+# assertthat::assert_that(NumRecords == length(rows_per_record))
+```
+
+Get all the IDs and make a row for every record of every strain.  
+```{r}
+# BioSampleIDs <- sapply(1:NumRecords, function(x) xmlValue(xmltop2[[x]][['Ids']][[1]]))
+# #commenting out the SRAIDS becasue it turns out that you cant guarantee that it is elelment 3 of 'Ids' and can be matched using other queries
+# #SRAIDs <- sapply(1:NumRecords, function(x) xmlValue(xmltop2[[x]][['Ids']][[3]]))
+# Organisms <- sapply(1:NumRecords, function(x) xmlValue(xmltop2[[x]][['Description']][['Organism']]))
+# #T_head_uniq <- unique(headers_per_record)[[1]]
+
+```
+
+Function to populate rows for each sample
+```{r}
+populate_rows <- function(k){
+  # k is the record ID from the larger table named  xmltop2
+  T_vals <- xpathSApply(xmltop2,paste0('//*[',k,']/Description/Comment/Table/Body/Row/Cell'),xmlValue)
+  T_cols <- xpathSApply(xmltop2, paste0('//*[',k,']/Description/Comment/Table/Header/Cell'), xmlValue)
+  numcols <- length(T_cols)
+  numrows <- length(T_vals)/numcols
+  df <- data.frame(BioSample = rep(xmlValue(xmltop2[[k]][['Ids']][[1]]),numrows),Organism = rep(xmlValue(xmltop2[[k]][['Description']][['Organism']]),numrows))   
+  # add all the columns
+  df[T_cols] <- NA
+  #loop to ad each row (faster structure?)
+  for (x in 1:numrows) {
+  vs = 1+(x-1)*numcols
+  ve = 1+(x-1)*numcols+(numcols-1)
+  df[x,3:(numcols+2)]=T_vals[vs:ve]
+  }
+return(df)
+}
+```
+
+Turns out some BioSample records have different numbers of tables
+```{r}
+all_comments <- sapply(1:NumRecords, function(x) xmlSize(xmltop2[[x]][['Description']][['Comment']]))
+table(all_comments)
+```
+Filter out those with multiple comments (==multiple tables)
+```{r}
+samples_to_process <- which(all_comments == 1)
+```
+
+
+```{r}
+combined_df <- map_df(samples_to_process,populate_rows,.progress = TRUE)
+```
+
+```{r}
+write_tsv(combined_df,"./ncbi_antibiograms_20230312.tsv")
+```
+
+To Do - investigate all_comments > 1
+Fixed problems with SRA and Organism
+
+731 S. aureus genomes with drug info
+```{r}
+combined_df %>%
+  filter(grepl("aureus",Organism)) %>%
+  group_by(BioSample) %>%
+  summarize()
+```
+
