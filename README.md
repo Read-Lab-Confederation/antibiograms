@@ -8,3 +8,5 @@ The repo contains
 *multiple_XML_antibiotgrams.Rmd* - a R markdown script for parsing the NCBI XML file
 
 *ncbi_antibiograms_20230312.tsv.zip* - a zipped tsv file of the results of the multiple_XML_antibiotgrams.Rmd script.  A database of antibiogram results from strains with public deposited genome sequences linked to BioSample IDs
+
+Please use the data for your analysis if you like but be aware that I make no guarantees of accuracy!
