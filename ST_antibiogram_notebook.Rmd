@@ -1,0 +1,371 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Barplot with only resistant data from antibiogram table for all organisms
+```{r All data}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+setwd("/Users/microbe/Documents/ST_DryLab")
+#import dataframe using read_tsv function
+df<-readr::read_tsv("./ncbi_antibiograms_20230312.tsv")
+#group by biosample, to group all Biosample ids together instead of having duplicates (not sure if this worked, because it gives me the same graph as it would give for all resistance phenotype included)
+df %>%
+  group_by(BioSample) %>%
+
+#fct_lump_n to only include n number of observation with highest frequency, fct_infreq function to order the graph from descending order of count. 
+ggplot(df, mapping = aes(x = fct_lump_n(fct_infreq(Antibiotic), n=30), fill = `Resistance phenotype`))+
+  geom_bar()+
+  labs(title = "Antibiotic Resistance phenotypes in all organisms",
+       x = "Antibiotics",
+       y = "Number of Resistant organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))
+```
+To make same graphs as above but with only top 10 Abs
+```{r Top 10 Ab}
+#remove Ab subset on this graph to plot it for all Abs
+ggplot(df, mapping = aes(x = fct_lump_n(fct_infreq(Antibiotic),n=10), fill = `Resistance phenotype`))+
+  geom_bar()+
+  labs(title = "Antibiotic Resistance in all organisms",
+       x = "Antibiotics",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))
+```
+
+
+Similar Barplot as above but with only resistant data from antibiogram table for all organisms
+```{r Only resistant phenotype}
+
+df_filter <- df[ df$`Resistance phenotype` %in% "resistant",]
+
+#use ggplot subset function to include only resistant organisms, fct_infreq function to order the graph from descending order of count. To plot a bar graph with Antibiotic on X axis and count of resistance on Y axis. 
+ggplot(df_filter,  aes(x = fct_lump_n(fct_infreq(Antibiotic), n = 30), fill = `Resistance phenotype`))+
+  geom_bar(stat="count")+
+  labs(title = "Antibiotic Resistance in all organisms",
+       x = "Antibiotics",
+       y = "Number of Resistant organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))
+```
+
+
+
+Barplot with resistant data but with top 10 Abs on X-axis.
+
+```{r Top 10 Ab_Resistant phenotype}
+#I used the subset function as nothing else worked. There maybe a better way to just filter Abs with Resistant phenotype count > n. 
+ggplot(subset(df, `Resistance phenotype` %in% "resistant" ), mapping = aes(x = fct_lump_n(fct_infreq(Antibiotic), n = 10), fill = `Resistance phenotype`))+
+geom_bar()+
+  labs(title = "Antibiotic Resistance in all organisms",
+       x = "Antibiotics",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))
+```
+Similar graph as above, this time faceting the top 9 resistant Abs and to determine top 10 Organisms that have resistance against these Abs
+```{r Top 10 Ab_Top 9 Organisms  with Ab resistance phenotype}
+ggplot(subset(df, Antibiotic %in% c("ciprofloxacin", "gentamicin", "tetracycline","ceftriaxone", "trimethoprim-sulfamethoxazole", "ampicillin", "streptomycin","sulfisoxazole",  "cefoxitin")), mapping = aes(x = fct_lump_n(fct_infreq(Organism),n=10), fill = `Resistance phenotype`))+
+  geom_bar()+
+  labs(title = "Antibiotic Resistance Phenotype of Top 10 organisms",
+       x = "Antibiotics",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))+
+  facet_wrap(.~Antibiotic)
+
+```
+
+
+The above graph but with only resistant phenotype
+```{r Top 10 Ab_top 9  organisms_Resistant phenotype}
+#Again used subset function, making the code so complicated, will find better way to do this. 
+ggplot(subset(df, `Resistance phenotype` %in% "resistant" & Antibiotic %in% c("ciprofloxacin", "gentamicin", "tetracycline","ceftnaxone", "trimethoprim-sulfamethoxazole", "ampicillin", "nalidixic acid" , "amoxicillin-clavulanic acid", "cefoxitin", "streptomycin")), mapping = aes(x = fct_lump_n(fct_infreq(Organism),n=10), fill = `Resistance phenotype`))+
+  geom_bar()+
+  labs(title = "Antibiotic Resistance in (Top) 10 organisms",
+       x = "Antibiotics",
+       y = "Number of Resistant organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))+
+  facet_wrap(.~Antibiotic)
+```
+
+```{r Top 10 Ab_other 9 Salmonella organisms}
+#Again used subset function, making the code so complicated, will find better way to do this. 
+ggplot(subset(df, Antibiotic %in% c("ciprofloxacin", "gentamicin", "tetracycline","ceftnaxone", "trimethoprim-sulfamethoxazole", "ampicillin", "nalidixic acid" , "amoxicillin-clavulanic acid", "cefoxitin", "streptomycin", "azithromycin") & Organism %in% c("Salmonella enterica","Salmonella enterica subsp. enterica serovar Reading", "Salmonella enterica subsp. enterica serovar Kentucky","Salmonella enterica subsp. enterica serovar Infantis", "Salmonella enterica subsp. enterica serovar Enteritidis", "Salmonella enterica subsp. enterica serovar Typhimurium", "Salmonella enterica subsp. enterica serovar Heidelberg", "Salmonella enterica subsp. enterica serovar Hadar", "Salmonella enterica subsp. enterica serovar Typhimurium var. 5-")), mapping = aes(x = fct_infreq(Antibiotic), fill = `Resistance phenotype`))+
+  geom_bar()+
+  labs(title = "Antibiotic Resistance in Salmonella enterica",
+       x = "Antibiotics",
+       y = "Number of Resistant organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))+
+  facet_wrap(.~Organism)
+```
+```{r Top 10 Ab_other 9 Salmonella organisms_resistant}
+#Again used subset function, making the code so complicated, will find better way to do this. 
+ggplot(subset(df, `Resistance phenotype` %in% "resistant" & Antibiotic %in% c("ciprofloxacin", "gentamicin", "tetracycline","ceftnaxone", "trimethoprim-sulfamethoxazole", "ampicillin", "nalidixic acid" , "amoxicillin-clavulanic acid", "cefoxitin", "streptomycin", "azithromycin") & Organism %in% c("Salmonella enterica","Salmonella enterica subsp. enterica serovar Reading", "Salmonella enterica subsp. enterica serovar Kentucky","Salmonella enterica subsp. enterica serovar Infantis", "Salmonella enterica subsp. enterica serovar Enteritidis", "Salmonella enterica subsp. enterica serovar Typhimurium", "Salmonella enterica subsp. enterica serovar Heidelberg", "Salmonella enterica subsp. enterica serovar Hadar", "Salmonella enterica subsp. enterica serovar Typhimurium var. 5-")), mapping = aes(x = fct_infreq(Antibiotic), fill = `Resistance phenotype`))+
+  geom_bar()+
+  labs(title = "Antibiotic Resistance in Salmonella enterica",
+       x = "Antibiotics",
+       y = "Number of Resistant organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))+
+  facet_wrap(.~Organism)
+```
+```{r S_Aureus_All Resistant phenotype}
+#I used the subset function as nothing else worked. There maybe a better way to just filter Abs with Resistant phenotype count > n. 
+ggplot(subset(df, Organism %in% "Staphylococcus aureus"), mapping = aes(x = fct_lump_n(fct_infreq(Antibiotic), n = 20), fill = `Resistance phenotype`))+
+geom_bar()+
+  labs(title = "Antibiotic Resistance in S aureus",
+       x = "Antibiotics",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))
+```
+```{r S_Aureus_Resistant}
+#I used the subset function as nothing else worked. There maybe a better way to just filter Abs with Resistant phenotype count > n. 
+ggplot(subset(df, `Resistance phenotype` %in% "resistant" & Organism %in% "Staphylococcus aureus"), mapping = aes(x = fct_lump_n(fct_infreq(Antibiotic), n = 20), fill = `Resistance phenotype`))+
+geom_bar()+
+  labs(title = "Antibiotic Resistance in S aureus",
+       x = "Antibiotics",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))
+```
+
+```{r S_Aureus_Resistant phenotype_Spread measurement sign_table}
+df<-readr::read_tsv("./ncbi_antibiograms_20230312.tsv")
+df_Staph <- df[df$Organism %in% "Staphylococcus aureus"  & df$`Laboratory typing method` %in% "MIC",]
+
+df_spread <- spread(df_Staph,`Measurement sign`, Measurement) 
+df_gather <- gather(df_spread,`Measurement sign`, Measurement, 14:17)
+
+df_gather1 <- df_gather %>% drop_na("Measurement")
+write_tsv(df_gather1, "S-aureus_gather_antibiogram.tsv")
+
+``` 
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(ggpubr)
+library(patchwork)
+df<-readr::read_tsv("./ncbi_antibiograms_20230312.tsv")
+df_Saureus <- df[ df$Organism %in% "Staphylococcus aureus" & df$`Laboratory typing method` %in% "MIC",]
+MIC64 <- df_Saureus %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 64 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC64)
+MIC64_plot <-ggplot(MIC64, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(x = "MIC < 64",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x= element_blank())
+
+MIC32 <- MIC64 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 32 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC32)
+MIC32_plot <- ggplot(MIC32, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(x = "MIC < 32",
+       y = "Number of Organisms")+
+  theme_bw()+
+  
+  theme(axis.text.x= element_blank(),
+      axis.title.y = element_blank())
+
+MIC16 <- MIC32 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 16 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC16)
+MIC16_plot <- ggplot(MIC16, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(
+       x = "MIC < 16",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x= element_blank(),
+      axis.title.y = element_blank())
+
+MIC8 <- MIC16 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 8 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC8)
+MIC8_plot <-ggplot(MIC8, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(
+       x = "MIC < 8",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x= element_blank(),
+      axis.title.y = element_blank())
+
+MIC4 <- MIC8 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 4 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC4)
+MIC4_plot <-ggplot(MIC4, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(
+       x = "MIC < 4",
+       y = "Number of Organisms")+
+ theme_bw()+
+  theme(axis.text.x= element_blank(),
+      axis.title.y = element_blank())
+
+MIC2 <- MIC4 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 2 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC2)
+MIC2_plot <-ggplot(MIC2, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(
+       x = "MIC < 2",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x= element_blank())
+
+MIC1 <- MIC2 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 1 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC1)
+MIC1_plot <-ggplot(MIC1, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(
+       x = "MIC < 1",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x= element_blank(),
+      axis.title.y = element_blank())
+
+MIC0.5 <- MIC1 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 0.5 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC0.5)
+MIC0.5_plot <-ggplot(MIC0.5, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(
+       x = "MIC < 0.5",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x= element_blank(),
+      axis.title.y = element_blank())
+
+MIC0.25 <- MIC0.5 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 0.25 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC0.25)
+MIC0.25_plot <-ggplot(MIC0.25, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(
+       x = "MIC < 0.25",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x= element_blank(),
+      axis.title.y = element_blank())
+
+MIC0.12 <- MIC0.25 %>% 
+  mutate(Measurement = as.numeric(Measurement)) %>% 
+  filter(Measurement < 0.12 & `Measurement sign` %in% c("==","<=", "<"))
+view(MIC0.25)
+MIC0.12_plot <-ggplot(MIC0.12, mapping = aes(x= "MIC", fill = `Resistance phenotype`))+
+  geom_bar(width =0.5)+ 
+  labs(
+       x = "MIC < 0.12",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x= element_blank(),
+      axis.title.y = element_blank())
+
+
+combined_plot <- ggarrange(MIC64_plot, MIC32_plot, MIC16_plot, MIC8_plot, MIC4_plot, MIC2_plot, MIC1_plot, MIC0.5_plot, MIC0.25_plot, MIC0.12_plot,
+                           ncol=5, nrow=2,
+                           common.legend = TRUE, legend = "bottom")
+
+# Display the merged plot
+combined_plot
+
+  length(which(MIC32$`Resistance phenotype` == "susceptible"))
+
+
+```
+To create a better version of above graph
+```{r fig.width=10, fig.height=5}
+library(ggplot2)
+library(reshape2)
+
+#Created a data frame with all the MIC values from above chunk
+MIC <- c("MIC<64", "MIC<32", "MIC<16", "MIC<8", "MIC<4", "MIC<2", "MIC<1", "MIC<0.5","MIC<0.25","MIC<0.12")
+Intermediate <- c(37,37,36,26,21,14,0,0,0,0)
+Nonsusceptible <- c(20,20,20,20,13,0,0,0,0,0)
+Not_defined <- c(115,114,108, 100, 6, 6, 3, 3, 1, 0)
+Resistant <- c(605,601,512,413,344,275,183,107,1,1)
+Susceptible <- c (9001, 8928, 8587, 8586, 8448, 7420, 6039, 2461, 509, 168)
+Total <- c(9778, 9700, 9263, 9153, 8832, 7715, 6225, 2571, 511, 169)
+df <- data.frame(MIC, Intermediate, Nonsusceptible, Not_defined, Resistant, Susceptible)
+
+
+df$MIC <- factor(df$MIC, levels=c("MIC<64", "MIC<32", "MIC<16", "MIC<8", "MIC<4", "MIC<2", "MIC<1", "MIC<0.5", "MIC<0.25", "MIC<0.12"))
+
+df.melted <- melt(df, id.vars="MIC", variable.name="Resistance phenotype", value.name="Count")
+
+ggplot(df.melted, aes(x=MIC, y=Count, fill=`Resistance phenotype`)) + 
+  geom_bar(stat="identity") +
+  
+  labs(title="S aureus Ab resistance phenotypes according to MIC", x="MIC", y="Number of organisms") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))
+
+
+```
+
+
+```{r}
+#I used the subset function as nothing else worked. There maybe a better way to just filter Abs with Resistant phenotype count > n. 
+df<-readr::read_tsv("./ncbi_antibiograms_20230312.tsv")
+df_tet_Saureus <- df[df$Organism %in% "Staphylococcus aureus" & df$Antibiotic %in% "tetracycline",]
+ggplot(df_tet_Saureus, mapping = aes(x = Antibiotic, fill = `Resistance phenotype`))+
+geom_bar(width = 0.25)+
+  labs(title = "Tetracycline Resistance in S aureus",
+       x = "Antibiotic",
+       y = "Number of Organisms")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(hjust=0.5))
+write_tsv(df_tet_Saureus, "S_aureus_Tetracycline.tsv")
+
+```
+
+
+
+```{r}
+setwd("/Users/microbe/Documents/ST_DryLab")
+
+df1<-readr::read_tsv("./s_aureus-results.tsv")
+
+df2 <- readr::read_tsv("./S_aureus_Tetracycline.tsv")
+
+common_vals <- intersect(df2$BioSample, df1$sample_accession)
+df2_common <- df2[df2$BioSample %in% common_vals, ]
+df1_common <- df1[df1$sample_accession %in% common_vals, ]
+
+merged_file <- merge(df2_common, df1_common, by.x = "BioSample", by.y = "sample_accession")
+
+write_tsv(merged_file, "Common BioSample.tsv")
+
+```
